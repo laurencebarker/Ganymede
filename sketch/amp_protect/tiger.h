@@ -42,8 +42,8 @@ struct SCATCommands
 {
   char* CATString;                // eg "ZZAR"
   ERXParamType RXType;            // type of parameter expected on receive
-  int MinParamValue;              // eg "-999"
-  int MaxParamValue;              // eg "9999"
+  long MinParamValue;             // eg "-999"
+  long MaxParamValue;             // eg "9999"
   byte NumParams;                 // number of parameter bytes in a "set" command
   bool AlwaysSigned;              // true if the param version should always have a sign
 };

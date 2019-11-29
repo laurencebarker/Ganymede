@@ -256,9 +256,6 @@ void ParseCATCmd(void)
   }
   if (ValidResult == true)
   {
-//    Serial.print("match= ");
-//    Serial.print(GCATCommands[MatchedCAT].CATString);
-//    Serial.print("; parameter=");
     switch(ParsedType)
     {
       case eStr: 
@@ -275,11 +272,6 @@ void ParseCATCmd(void)
         HandleCATCommandNoParam(MatchedCAT);
         break;
     }
-  }
-  else
-  {
-//    Serial.print("Parse Error - cmd= ");
-//    Serial.println(GCATInputBuffer);
   }
 //
 // finally clear the input buffer to start again for the next command

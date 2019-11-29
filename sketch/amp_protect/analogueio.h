@@ -33,7 +33,7 @@ void AnalogueIOInit(void);
 //
 // get temperature, as 1 dp fixed point integer
 //
-unsigned int GetTemperature(void);
+int GetTemperature(void);
 
 
 

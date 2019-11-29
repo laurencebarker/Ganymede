@@ -172,7 +172,6 @@ unsigned char mysprintf(char *dest, int Value, bool AddDP)
 //
 void page0PushCallback(void *ptr)             // called when page 0 loads (splash page)
 {
-  Serial.println("page 0");
   GDisplayPage = eSplashPage;
 }
 
@@ -182,7 +181,6 @@ void page0PushCallback(void *ptr)             // called when page 0 loads (splas
 //
 void page1PushCallback(void *ptr)             // called when page 1 loads (RX page)
 {
-  Serial.println("page 1");
   GDisplayPage = eRXPage;
 }
 
@@ -191,7 +189,6 @@ void page1PushCallback(void *ptr)             // called when page 1 loads (RX pa
 //
 void page2PushCallback(void *ptr)             // called when page 2 loads (TX page)
 {
-  Serial.println("page 2");
   GDisplayPage = eTXPage;
 }
 
@@ -201,7 +198,6 @@ void page2PushCallback(void *ptr)             // called when page 2 loads (TX pa
 //
 void page3PushCallback(void *ptr)             // called when page 3 loads (tripped page)
 {
-  Serial.println("page 3");
   GDisplayPage = eTrippedPage;
   if(GTripCause == eTripCurrent)
   {
@@ -236,7 +232,6 @@ void page3PushCallback(void *ptr)             // called when page 3 loads (tripp
 void page4PushCallback(void *ptr)             // called when page 4 loads (about page)
 {
   char Str[10];
-  Serial.println("page 4");
   GDisplayPage = eAboutPage;
   mysprintf(Str, SWVERSION, false);
   p4SWVersion.setText(Str);
@@ -249,7 +244,6 @@ void page4PushCallback(void *ptr)             // called when page 4 loads (about
 void p3ResetPushCallback(void *ptr)              // reset trips pushbutton
 {
   DisplayResetPressed();
-  Serial.println("reset press");
 }
 
 
@@ -330,7 +324,7 @@ void DisplayTick(void)
             p2Voltage.setText(Str);
             break;
           case 2:                                         // display current
-            mysprintf(Str, GetCurrent(), false);          // current in fractional A
+            mysprintf(Str, GetCurrent(), true);           // current in fractional A
             p2Current.setText(Str);
             break;
           case 3:                                         // display forward power
@@ -367,7 +361,7 @@ void DisplayTick(void)
             p3Voltage.setText(Str);
             break;
           case 2:                                         // display current
-            mysprintf(Str, GetCurrent(), false);          // current in fractional A
+            mysprintf(Str, GetCurrent(), true);           // current in fractional A
             p3Current.setText(Str);
             break;
           case 3:                                         // display forward power

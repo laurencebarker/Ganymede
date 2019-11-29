@@ -86,11 +86,12 @@ void MakeAmplifierTripMessage(ETripCause Data)
 
 //
 // handle a trip message from PC
-// the only one we recognise is param=16 meaning "reset the trip condition"
+// the only one we recognise is param=32 meaning "reset the trip condition"
 //
 HandleAmplifierTripMessage(int Param)
 {
-  
+  if(Param == 32)
+    DisplayResetPressed();
 }
 
 

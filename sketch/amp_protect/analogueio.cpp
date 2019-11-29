@@ -16,17 +16,16 @@
 #include "protect.h"
 
 
-#define VLINEVOLTSCALE 0.1953F              // convert ADC reading to volts
-#define VTEMPSCALE 0.1172F                  // convert ADC reading to temperature
-#define VCURRENTSCALE 0.0195F               // convert ADC reading to current
-#define VVOLTAGESCALE 0.0586                // convert ADC reading to PSU voltage
+#define VPOWERSCALE 0.000620F               // convert ADC reading squared to forward, reverse power
+#define VCURRENTSCALE 0.0488F               // convert ADC reading to current
+#define VVOLTAGESCALE 0.1025F                // convert ADC reading to PSU voltage
 
 //
 // comparator threshold outputs. See spreadsheet for derivation.
 //
-#define VCURRENTPWMTHRESHOLD  102           // DEBUG 2V  
-#define VVOLTAGEPWMTHRESHOLD  156           // DEBUG 3V
-#define VREVPOWERPWMTHRESHOLD 156           // DEBUG 3V
+#define VCURRENTPWMTHRESHOLD  112           // 2.2V  
+#define VVOLTAGEPWMTHRESHOLD  134           // 2.61V
+#define VREVPOWERPWMTHRESHOLD 100           // 1.96V
 
 
 //
@@ -38,6 +37,75 @@ unsigned int GSensorPSUVolts;
 unsigned int GSensorCurrent;
 unsigned int GSensorFwdPower;
 unsigned int GSensorRevPower;
+
+
+//
+// interpolate temperature measurements
+// we have an array of point pairs fully covering the ADC input range, including 0 and 1023
+//
+
+struct STempData
+{
+  int ADCPoint;
+  int Temp;
+};
+
+
+
+#define VNUMTEMPDATAPOINTS 11
+STempData GTempDataArray[VNUMTEMPDATAPOINTS] =
+{
+  {0,-200},
+  {100, 50},
+  {182, 200},
+  {298, 350},
+  {435, 500},
+  {573, 650},
+  {693, 800},
+  {814, 1000},
+  {906, 1250},
+  {949, 1450},
+  {1023,1800}
+};
+
+
+
+//
+// find a temperature for a given ADC reading
+// this needs to read the table and find the points either side of the ADC reading
+// result is 1DP fixed point (ie integer, 10x temp value in C)
+//
+
+int FindTemp(int SensorReading)
+{
+  byte Index;    // array index
+  int FoundTemp;
+  int Temp1, Temp2; // temps above and below the data point
+  int ADC1, ADC2;       // ADC samples above and below the data point
+  int DeltaTemp;
+// check the extremes; if not an extreme, find points either side in the array
+  if (SensorReading == 0)
+    FoundTemp = GTempDataArray[0].Temp;
+  else if (SensorReading == 1023)
+    FoundTemp = GTempDataArray[VNUMTEMPDATAPOINTS -1].Temp;
+  else          // find points and interpolate
+  {
+    for(Index=1; Index < VNUMTEMPDATAPOINTS; Index++)
+      if(SensorReading < GTempDataArray[Index].ADCPoint)    // this will happen once!
+      { 
+        Temp2 = GTempDataArray[Index].Temp;
+        Temp1 = GTempDataArray[Index-1].Temp;
+        ADC2 = GTempDataArray[Index].ADCPoint;
+        ADC1 = GTempDataArray[Index-1].ADCPoint;
+        DeltaTemp = (Temp2-Temp1)*((128*(SensorReading-ADC1))/(ADC2-ADC1));
+        FoundTemp = Temp1 + (DeltaTemp >> 7);
+        break;
+      }
+  }
+  return FoundTemp;
+}
+
+
 
 //
 // AnalogueIO initialise
@@ -66,22 +134,21 @@ void AnalogueIOTick(void)
   ScaledReading = (float)SensorReading * VCURRENTSCALE * 10.0;      // 10x current
   GSensorCurrent = (unsigned int)ScaledReading;                     // store 10x current to variable
 
-  SensorReading = analogRead(VPINTEMPADC);                        // get ADC reading for temperature
-  ScaledReading = (float)SensorReading * VTEMPSCALE * 10.0;       // 10x temp
-  GSensorTemperature = (unsigned int)ScaledReading;               // store 10x temp to variable
+  SensorReading = analogRead(VPINTEMPADC);                          // get ADC reading for temperature
+  GSensorTemperature = (unsigned int)FindTemp(SensorReading);       // store 10x temp to variable
 
   SensorReading = analogRead(VPINVOLTAGEADC);                       // get ADC reading for PSU voltage
   ScaledReading = (float)SensorReading * VVOLTAGESCALE * 10.0;      // 10x voltage
   GSensorPSUVolts = (unsigned int)ScaledReading;                    // store 10x voltage to variable
 
   SensorReading = analogRead(VPINFWDPOWERADC);                      // get ADC reading for forward RF voltage
-  ScaledReading = (float)SensorReading * VLINEVOLTSCALE;            // line voltage
-  ScaledReading = ScaledReading * ScaledReading * 0.02;             // V2/R for power
+  ScaledReading = (float)SensorReading;                             // ADC
+  ScaledReading = ScaledReading * ScaledReading * VPOWERSCALE;      // V2/R for power
   GSensorFwdPower = (unsigned int)ScaledReading;                    // store forward power to variable (not fixed point!)
 
   SensorReading = analogRead(VPINREVPOWERADC);                      // get ADC reading for reverse RF voltage
-  ScaledReading = (float)SensorReading * VLINEVOLTSCALE;            // line voltage
-  ScaledReading = ScaledReading * ScaledReading * 0.02;             // V2/R for power
+  ScaledReading = (float)SensorReading;                             // ADC
+  ScaledReading = ScaledReading * ScaledReading * VPOWERSCALE;      // V2/R for power
   GSensorRevPower = (unsigned int)ScaledReading;                    // store reverse power to variable (not fixed point!)
 
   CheckTemperature(GSensorTemperature);
@@ -92,7 +159,7 @@ void AnalogueIOTick(void)
 //
 // get temperature, as 1 dp fixed point integer
 //
-unsigned int GetTemperature(void)
+int GetTemperature(void)
 {
   return GSensorTemperature;
 }

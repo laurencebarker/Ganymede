@@ -31,7 +31,7 @@ enum EProtectionState
 
 
 
-#define VINITCOUNT 500                  // 5 seconds count
+#define VINITCOUNT 550                  // 5.5 seconds count
 #define VCOMPARATORPINS 3               // pins PE00 & PE01
 
 //
@@ -49,7 +49,7 @@ bool GResetActivated;                   // true if reset button has been activat
 #define VTTRIPTEMPREENABLE 500          // re-enable at 50C
 #define VFANONTHRESHOLD 400             // fan on at 40C
 #define VFANOFFTHRESHOLD 300            // off at 30C
-#define VTRIPFWDPOWERTHRESHOLD 700      // forward power trip, in watts
+#define VTRIPFWDPOWERTHRESHOLD 600      // forward power trip, in watts
 #define VTTRIPPOWERREENABLE 40          // forward power re-enable level, in watts (should be 0 if tripped anyway)
 
 

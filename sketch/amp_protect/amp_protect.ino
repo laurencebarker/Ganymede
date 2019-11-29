@@ -59,7 +59,6 @@ void setup()
 
   AnalogueIOInit();
   DisplayInit();
-  Serial.println("display initialised");
   OnTimeInit();                                                   // initialise "on time" variables
 //
 // initialise CAT handler

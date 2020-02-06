@@ -17,8 +17,8 @@
 
 
 #define VPOWERSCALE 0.000620F               // convert ADC reading squared to forward, reverse power
-#define VCURRENTSCALE 0.0488F               // convert ADC reading to current
-#define VVOLTAGESCALE 0.1025F                // convert ADC reading to PSU voltage
+#define VCURRENTSCALE 0.07373F              // convert ADC reading to current (includes potential divider)
+#define VVOLTAGESCALE 0.1025F               // convert ADC reading to PSU voltage
 
 //
 // comparator threshold outputs. See spreadsheet for derivation.
@@ -37,7 +37,7 @@ unsigned int GSensorPSUVolts;
 unsigned int GSensorCurrent;
 unsigned int GSensorFwdPower;
 unsigned int GSensorRevPower;
-
+int GSensorZeroCurrentRaw;               // ADC reading
 
 //
 // interpolate temperature measurements
@@ -52,6 +52,10 @@ struct STempData
 
 
 
+//
+// lookup data for thermistor calibration
+// derived from a spreadsheet
+//
 #define VNUMTEMPDATAPOINTS 11
 STempData GTempDataArray[VNUMTEMPDATAPOINTS] =
 {
@@ -130,10 +134,16 @@ void AnalogueIOTick(void)
   int SensorReading;
   float ScaledReading;
 
+//
+// current needs to have the zero offset removed, but noise could make it dip below 0A. Clip at 0A.
+//
   SensorReading = analogRead(VPINCURRENTADC);                       // get ADC reading for current
-  ScaledReading = (float)SensorReading * VCURRENTSCALE * 10.0;      // 10x current
-  GSensorCurrent = (unsigned int)ScaledReading;                     // store 10x current to variable
-
+  ScaledReading = (float)(SensorReading - GSensorZeroCurrentRaw) * VCURRENTSCALE * 10.0;      // 10x current
+  if(ScaledReading > 0)
+    GSensorCurrent = (unsigned int)ScaledReading;                   // store 10x current to variable
+  else
+    GSensorCurrent = 0;
+    
   SensorReading = analogRead(VPINTEMPADC);                          // get ADC reading for temperature
   GSensorTemperature = (unsigned int)FindTemp(SensorReading);       // store 10x temp to variable
 
@@ -196,4 +206,18 @@ unsigned int GetForwardPower(void)
 unsigned int GetReversePower(void)
 {
   return GSensorRevPower;
+}
+
+
+//
+// set zero current
+// this is used to null out offset current: the ACS723 has a delivberate offset
+// must be called when the current is zero!
+//
+void SetZeroCurrent(void)
+{
+  int SensorReading;
+  float ScaledReading;
+
+  GSensorZeroCurrentRaw = analogRead(VPINCURRENTADC);                       // get ADC reading for current
 }

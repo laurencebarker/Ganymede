@@ -15,6 +15,7 @@
 #include "protect.h"
 #include "iopins.h"
 #include "cathandler.h"
+#include "analogueio.h"
 
 
 //
@@ -108,6 +109,7 @@ void ProtectInit(void)
 //
   if(GTripCause == eNoTrip)                   // OK to power up
   {
+    SetZeroCurrent();                         // read zero while drain supply still off
     attachInterrupt(digitalPinToInterrupt(VPINCURRENTCOMP), CurrentComparatorHandler, RISING);
     attachInterrupt(digitalPinToInterrupt(VPINVOLTAGECOMP), VoltageComparatorHandler, RISING);
     attachInterrupt(digitalPinToInterrupt(VPINREVPOWERSR), SRFlipFlopTripHandler, FALLING);

@@ -133,11 +133,16 @@ void ScanParseSerial()
       for(Cntr=0; Cntr < ReadChars; Cntr++)
       {
         Ch=CATSERIAL.read();
-        *GCATWritePtr++ = Ch;
-        if (Ch == ';')
+        if(isControl(Ch))
+          GCATWritePtr = GCATInputBuffer;                   // point to start of buffer
+        else
         {
-          *GCATWritePtr++ = 0;
-          ParseCATCmd();     
+          *GCATWritePtr++ = Ch;
+          if (Ch == ';')
+          {
+            *GCATWritePtr++ = 0;
+            ParseCATCmd();     
+          }
         }
       }
     }

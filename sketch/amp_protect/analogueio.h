@@ -45,6 +45,7 @@ unsigned int GetPSUVoltage(void);
 
 //
 // get drain current, as 1 dp fixed point integer
+// zero should hasve been nulled out, but clips at zero
 //
 unsigned int GetCurrent(void);
 
@@ -61,6 +62,12 @@ unsigned int GetForwardPower(void);
 //
 unsigned int GetReversePower(void);
 
+
+//
+// set zero current
+// this is used to null out offset current: the ACS723 has a delivberate offset
+//
+void SetZeroCurrent(void);
 
 
 

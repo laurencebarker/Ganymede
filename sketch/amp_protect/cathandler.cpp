@@ -109,7 +109,7 @@ void HandleCATCommandNumParam(ECATCommands MatchedCAT, int ParsedParam)
   
   switch(MatchedCAT)
   {
-    case eZZZA:                                                       // h/w version reply
+    case eZZZA:                                                       // amplifier trip reset
       HandleAmplifierTripMessage(ParsedParam);
       break;
   }
@@ -126,6 +126,9 @@ void HandleCATCommandNoParam(ECATCommands MatchedCAT)
     case eZZZS:                                                       // s/w version reply
       MakeSoftwareVersionMessage();
       break;
+    case eZZZA:                                                       // amplifier trip request
+      MakeAmplifierTripMessage(GTripCause);
+    
   }
 }
 

@@ -84,7 +84,7 @@ void SRFlipFlopTripHandler(void)
 
 //
 // protect initialise
-// startup logic
+// startup logic. This is called after the analogue thresholds are driven out.
 //
 void ProtectInit(void)
 {
@@ -105,14 +105,19 @@ void ProtectInit(void)
   if(digitalRead(VPINREVPOWERSR)==LOW)        // check if flip flop for rev power already over limit
     GTripCause = eTripRevPower;
 //
+// while PSU still off, set the "zero" current reading (there is a deliberate 0.5V bias from ACS723)
+// and attach interrupts
+//
+  SetZeroCurrent();                         // read zero while drain supply still off
+  attachInterrupt(digitalPinToInterrupt(VPINCURRENTCOMP), CurrentComparatorHandler, RISING);
+  attachInterrupt(digitalPinToInterrupt(VPINVOLTAGECOMP), VoltageComparatorHandler, RISING);
+  attachInterrupt(digitalPinToInterrupt(VPINREVPOWERSR), SRFlipFlopTripHandler, FALLING);
+
+//
 // if there is a trip cause, just wait for now: the cause is set and will enter tripped in the sequencer
 //
   if(GTripCause == eNoTrip)                   // OK to power up
   {
-    SetZeroCurrent();                         // read zero while drain supply still off
-    attachInterrupt(digitalPinToInterrupt(VPINCURRENTCOMP), CurrentComparatorHandler, RISING);
-    attachInterrupt(digitalPinToInterrupt(VPINVOLTAGECOMP), VoltageComparatorHandler, RISING);
-    attachInterrupt(digitalPinToInterrupt(VPINREVPOWERSR), SRFlipFlopTripHandler, FALLING);
     digitalWrite(VPINPSUENABLE, HIGH);        // turn on PSU
   }
 }
@@ -125,6 +130,7 @@ void DisplayResetPressed(void)
 {
   if (GResettable)                              // if we meet the conditions - begin reset
   {
+    SetZeroCurrent();                           // re-read zero while drain supply still off
     GTripCause = eNoTrip;
     GProtectionState = eTripResetPressed;
     digitalWrite(VPINPSUENABLE, HIGH);          // turn PSU back on

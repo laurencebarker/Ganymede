@@ -36,7 +36,8 @@
 EDisplayPage GDisplayPage;                    // global set to current display page number
 byte GDisplayThrottleTicks;                   // number of clock ticks till next display object update
 byte GDisplayData;                            // sets which object to update next
-
+int GDisplayedPower;                          // used as part of update only if power moves by >10W
+bool GWritePowerDisplay1stTime;               // true when first entering TX
 
 //
 // declare pages:
@@ -284,6 +285,8 @@ void DisplayInit(void)
 void DisplayTick(void)
 {
   char Str[20];
+  int CurrentForwardPower;
+  bool UpdatePowerDisplay = false;
 //
 // handle touch display events
 //  
@@ -307,6 +310,8 @@ void DisplayTick(void)
       }
       else
         GDisplayThrottleTicks--;
+      GDisplayedPower = 0;                                // reset TX power for next TX display
+      GWritePowerDisplay1stTime = true;
       break;
 
 
@@ -328,8 +333,22 @@ void DisplayTick(void)
             p2Current.setText(Str);
             break;
           case 3:                                         // display forward power
-            mysprintf(Str, GetForwardPower(), false);     // forward power in W
-            p2FwdPower.setText(Str);
+            CurrentForwardPower = GetForwardPower();
+            if(CurrentForwardPower < 5)                   // if less that 5W, set 0
+            {
+              UpdatePowerDisplay = true;
+              GDisplayedPower = 0;
+            }
+            else if (abs(GDisplayedPower - CurrentForwardPower) >= 10)
+            {
+              GDisplayedPower = CurrentForwardPower;
+              UpdatePowerDisplay = true;
+            }
+            if(UpdatePowerDisplay || GWritePowerDisplay1stTime) // update display only if it has changed
+            {
+              mysprintf(Str, GDisplayedPower, false);     // forward power in W
+              p2FwdPower.setText(Str);
+            }
             break;
           case 4:                                         // display reverse power
             mysprintf(Str, GetReversePower(), false);     // reverse power in W

@@ -141,19 +141,22 @@ void DisplayResetPressed(void)
 //
 // forward power check (called from h/w driver)
 // parameter is forward power, integer
+// note forward power trip condition removed temporarily. Radio was tripping on TX when drain current in spec
 //
 void CheckFwdPower(int Power)
 {
-  if (Power > VTRIPFWDPOWERTHRESHOLD)
-  {
-    if (GTripCause == eNoTrip)
-      GTripCause = eTripFwdPower;
+//  if (Power > VTRIPFWDPOWERTHRESHOLD)
+//  {
+//    if (GTripCause == eNoTrip)
+//      GTripCause = eTripFwdPower;
 // deassert enable outputs
-      digitalWrite(VPINAMPENABLE, LOW);
-      digitalWrite(VPINPSUENABLE, LOW);
-      GPowerResettable = false;        // can't reset for temp
-  }
-  else if (Power < VTTRIPPOWERREENABLE)
+//      digitalWrite(VPINAMPENABLE, LOW);
+//      digitalWrite(VPINPSUENABLE, LOW);
+//      GPowerResettable = false;        // can't reset for temp
+// }
+//  else if (Power < VTTRIPPOWERREENABLE)
+//    GPowerResettable = true;
+  if (Power < VTTRIPPOWERREENABLE)
     GPowerResettable = true;
 }
 

@@ -49,7 +49,7 @@ void SetupTimerForInterrupt(int Milliseconds)
 void setup() 
 {
 //
-// initialise timer to give 2ms tick interrupt
+// initialise timer to give 10ms tick interrupt
 //
   SetupTimerForInterrupt(10);                                      // 10ms tick
   ConfigIOPins();

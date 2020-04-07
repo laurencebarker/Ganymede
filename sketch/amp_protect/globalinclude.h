@@ -16,7 +16,7 @@
 //
 // hardware and software version: send back to console on request
 //
-#define SWVERSION 3
+#define SWVERSION 4
 #define HWVERSION 1
 #define PRODUCTID 3                 // Ganymede
 

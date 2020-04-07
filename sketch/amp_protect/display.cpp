@@ -36,6 +36,7 @@
 EDisplayPage GDisplayPage;                    // global set to current display page number
 byte GDisplayThrottleTicks;                   // number of clock ticks till next display object update
 byte GDisplayData;                            // sets which object to update next
+byte GSecondaryDisplayData;                   // sets which object to update next
 int GDisplayedPower;                          // used as part of update only if power moves by >10W
 bool GWritePowerDisplay1stTime;               // true when first entering TX
 
@@ -60,8 +61,10 @@ NexText p1HsTemp = NexText(1, 8, "p1t8");                   // heatsink temp
 NexText p2HsTemp = NexText(2, 16, "p2t16");                 // heatsink temp
 NexText p2Voltage = NexText(2, 17, "p2t17");                // PSU voltage
 NexText p2Current = NexText(2, 18, "p2t18");                // drain current
-NexText p2FwdPower = NexText(2, 19, "p2t19");               // forward power
-NexText p2RevPower = NexText(2, 20, "p2t20");               // reverse power
+//NexText p2FwdPower = NexText(2, 19, "p2t19");               // forward power
+//NexText p2RevPower = NexText(2, 20, "p2t20");               // reverse power
+NexProgressBar p2FwdProgress = NexProgressBar(2, 24, "p2j0");            // forward power bar
+NexProgressBar p2RevProgress = NexProgressBar(2, 23, "p2j1");            // forward power bar
 
 //
 // page 3 objects:
@@ -286,7 +289,6 @@ void DisplayTick(void)
 {
   char Str[20];
   int CurrentForwardPower;
-  bool UpdatePowerDisplay = false;
 //
 // handle touch display events
 //  
@@ -320,43 +322,39 @@ void DisplayTick(void)
       {
         switch(GDisplayData)
         {
-          case 0:                                         // display temperature
-            mysprintf(Str, GetTemperature()/10, false);   // temp in C
-            p2HsTemp.setText(Str);
-            break;
-          case 1:                                         // display PSU voltage   
-            mysprintf(Str, GetPSUVoltage()/10, false);    // voltage in whole volts
-            p2Voltage.setText(Str);
-            break;
-          case 2:                                         // display current
-            mysprintf(Str, GetCurrent(), true);           // current in fractional A
-            p2Current.setText(Str);
-            break;
-          case 3:                                         // display forward power
+          case 0:                                         // display forward power
             CurrentForwardPower = GetForwardPower();
-            if(CurrentForwardPower < 5)                   // if less that 5W, set 0
-            {
-              UpdatePowerDisplay = true;
-              GDisplayedPower = 0;
-            }
-            else if (abs(GDisplayedPower - CurrentForwardPower) >= 10)
-            {
-              GDisplayedPower = CurrentForwardPower;
-              UpdatePowerDisplay = true;
-            }
-            if(UpdatePowerDisplay || GWritePowerDisplay1stTime) // update display only if it has changed
-            {
-              mysprintf(Str, GDisplayedPower, false);     // forward power in W
-              p2FwdPower.setText(Str);
-            }
+            p2FwdProgress.setValue(CurrentForwardPower/6);
             break;
-          case 4:                                         // display reverse power
+          case 1:                                         // display reverse power
             mysprintf(Str, GetReversePower(), false);     // reverse power in W
-            p2RevPower.setText(Str);
+            p2RevProgress.setValue((GetReversePower()*5)/6);
+            break;
+          case 2:                                         // display something else
+
+            switch(GSecondaryDisplayData)
+            {
+              case 0:                                         // display temperature
+                mysprintf(Str, GetTemperature()/10, false);   // temp in C
+                p2HsTemp.setText(Str);
+                break;
+              case 1:                                         // display PSU voltage   
+                mysprintf(Str, GetPSUVoltage()/10, false);    // voltage in whole volts
+                p2Voltage.setText(Str);
+                break;
+              case 2:                                         // display current
+                mysprintf(Str, GetCurrent(), true);           // current in fractional A
+                p2Current.setText(Str);
+                break;
+            }
+            if (GSecondaryDisplayData == 2)                      // and set up to display next object
+              GSecondaryDisplayData=0;
+            else
+              GSecondaryDisplayData++;
             break;
         }
         GDisplayThrottleTicks = VTENTHSECOND;
-        if (GDisplayData == 4)                      // and set up to display next object
+        if (GDisplayData == 2)                      // and set up to display next object
           GDisplayData=0;
         else
           GDisplayData++;
@@ -371,7 +369,8 @@ void DisplayTick(void)
       {
         switch(GDisplayData)
         {
-          case 0:                                         // display temperature
+          case 0:              
+          // display temperature
             mysprintf(Str, GetTemperature()/10, false);   // temp in C
             p3HsTemp.setText(Str);
             break;

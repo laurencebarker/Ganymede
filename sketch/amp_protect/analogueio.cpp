@@ -23,7 +23,7 @@
 //
 // comparator threshold outputs. See spreadsheet for derivation.
 //
-#define VCURRENTPWMTHRESHOLD  109           // 27A true current  
+#define VCURRENTPWMTHRESHOLD  125           // 32A true current  
 #define VVOLTAGEPWMTHRESHOLD  134           // 2.61V
 #define VREVPOWERPWMTHRESHOLD 105           // 1.96V
 

@@ -39,7 +39,7 @@ byte GDisplayData;                            // sets which object to update nex
 byte GSecondaryDisplayData;                   // sets which object to update next
 int GDisplayedPower;                          // used as part of update only if power moves by >10W
 bool GWritePowerDisplay1stTime;               // true when first entering TX
-
+unsigned int GReversePeakPower;               // reverse peak power value
 //
 // declare pages:
 //
@@ -323,12 +323,12 @@ void DisplayTick(void)
         switch(GDisplayData)
         {
           case 0:                                         // display forward power
-            CurrentForwardPower = GetForwardPower();
+            CurrentForwardPower = GetForwardPeakPower(true);
+            GReversePeakPower = GetReversePeakPower(true);
             p2FwdProgress.setValue(CurrentForwardPower/6);
             break;
           case 1:                                         // display reverse power
-            mysprintf(Str, GetReversePower(), false);     // reverse power in W
-            p2RevProgress.setValue((GetReversePower()*5)/6);
+            p2RevProgress.setValue((GReversePeakPower*5)/6);
             break;
           case 2:                                         // display something else
 

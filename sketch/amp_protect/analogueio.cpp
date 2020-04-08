@@ -37,6 +37,8 @@ unsigned int GSensorPSUVolts;
 unsigned int GSensorCurrent;
 unsigned int GSensorFwdPower;
 unsigned int GSensorRevPower;
+unsigned int GSensorFwdPowerPeak;
+unsigned int GSensorRevPowerPeak;
 int GSensorZeroCurrentRaw;               // ADC reading
 
 //
@@ -155,11 +157,15 @@ void AnalogueIOTick(void)
   ScaledReading = (float)SensorReading;                             // ADC
   ScaledReading = ScaledReading * ScaledReading * VPOWERSCALE;      // V2/R for power
   GSensorFwdPower = (unsigned int)ScaledReading;                    // store forward power to variable (not fixed point!)
-
+  if(GSensorFwdPower > GSensorFwdPowerPeak)                         // peak hold the value
+    GSensorFwdPowerPeak = GSensorFwdPower;
+    
   SensorReading = analogRead(VPINREVPOWERADC);                      // get ADC reading for reverse RF voltage
   ScaledReading = (float)SensorReading;                             // ADC
   ScaledReading = ScaledReading * ScaledReading * VPOWERSCALE;      // V2/R for power
   GSensorRevPower = (unsigned int)ScaledReading;                    // store reverse power to variable (not fixed point!)
+  if(GSensorRevPower > GSensorRevPowerPeak)
+    GSensorRevPowerPeak = GSensorRevPower;
 
   CheckTemperature(GSensorTemperature);
   CheckFwdPower(GSensorFwdPower);
@@ -208,6 +214,32 @@ unsigned int GetReversePower(void)
   return GSensorRevPower;
 }
 
+
+//
+// get forward peak power, as integer
+//
+unsigned int GetForwardPeakPower(bool Clear)
+{
+  unsigned int Value;
+
+  Value = GSensorFwdPowerPeak; 
+  if(Clear)
+    GSensorFwdPowerPeak = 0;
+  return Value;
+}
+
+//
+// get reverse power, as integer
+//
+unsigned int GetReversePeakPower(bool Clear)
+{
+  unsigned int Value;
+
+  Value = GSensorRevPowerPeak; 
+  if(Clear)
+    GSensorRevPowerPeak = 0;
+  return Value;  
+}
 
 //
 // set zero current

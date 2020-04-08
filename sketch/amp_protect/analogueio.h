@@ -62,6 +62,17 @@ unsigned int GetForwardPower(void);
 //
 unsigned int GetReversePower(void);
 
+//
+// get forward peak power, as integer
+//
+unsigned int GetForwardPeakPower(bool Clear);
+
+//
+// get reverse power, as integer
+//
+unsigned int GetReversePeakPower(bool Clear);
+
+
 
 //
 // set zero current

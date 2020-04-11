@@ -235,6 +235,7 @@ void ProtectTick(void)
       if (PTTPressed)
       {
         GProtectionState = eTX;
+        ClearPeakHolds();
         SetDisplayPage(eTXPage);
       }
       break;

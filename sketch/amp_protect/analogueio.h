@@ -72,6 +72,10 @@ unsigned int GetForwardPeakPower(bool Clear);
 //
 unsigned int GetReversePeakPower(bool Clear);
 
+//
+// clear peak hold settings. Called when PTT pressed
+//
+void ClearPeakHolds(void);
 
 
 //

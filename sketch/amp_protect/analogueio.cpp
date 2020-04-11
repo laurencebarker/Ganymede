@@ -241,6 +241,17 @@ unsigned int GetReversePeakPower(bool Clear)
   return Value;  
 }
 
+
+//
+// clear peak hold settings. Called when PTT pressed
+//
+void ClearPeakHolds(void)
+{
+    GSensorRevPowerPeak = 0;
+    GSensorFwdPowerPeak = 0;  
+}
+
+
 //
 // set zero current
 // this is used to null out offset current: the ACS723 has a delivberate offset

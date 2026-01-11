@@ -18,6 +18,7 @@
 #include "cathandler.h"
 #include "iopins.h"
 #include "protect.h"
+#include "configdata.h"
 
 
 //
@@ -52,10 +53,10 @@ void setup()
 // initialise timer to give 10ms tick interrupt
 //
   SetupTimerForInterrupt(10);                                      // 10ms tick
-  ConfigIOPins();
-
   Serial.begin(9600);
   delay(1000);
+  ConfigIOPins();
+  LoadSettingsFromEEprom();
 
   AnalogueIOInit();
   DisplayInit();

@@ -16,6 +16,12 @@
 
 
 
+extern long Gp2appVersion;                     // radio s/w version for Saturn
+extern long GFirmwareVersion;                  // radio firmware version
+
+
+
+
 #define VREVPOWERTRIP 1
 #define VCURRENTTRIP 2
 #define VVOLTSGETRIP 4
@@ -33,7 +39,7 @@ void MakeAmplifierTripMessage(ETripCause Data);
 //
 // handlers for received CAT commands
 //
-void HandleCATCommandNumParam(ECATCommands MatchedCAT, int ParsedParam);
+void HandleCATCommandNumParam(ECATCommands MatchedCAT, long ParsedParam);
 void HandleCATCommandNoParam(ECATCommands MatchedCAT);
 void HandleCATCommandBoolParam(ECATCommands MatchedCAT, bool ParsedBool);
 void HandleCATCommandStringParam(ECATCommands MatchedCAT, char* ParsedParam);

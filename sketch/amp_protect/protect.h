@@ -31,6 +31,7 @@ enum ETripCause
 };
 
 extern ETripCause GTripCause;                  // reason for trip
+extern bool GProtectionEnforced;               // true if protection is enforced
 
 
 
@@ -61,6 +62,8 @@ void CheckFwdPower(int Power);
 void DisplayResetPressed(void);
 
 
+
+
 //
 // 10ms tick code
 // execute sequencers for protection logic.
@@ -71,6 +74,10 @@ void DisplayResetPressed(void);
 // 
 void ProtectTick(void);
 
+//
+// enable/disable protection enforcement
+//
+void EnforceProtection(bool IsEnforced);
 
 
 #endif      // file sentry

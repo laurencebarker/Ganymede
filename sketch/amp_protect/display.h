@@ -26,7 +26,8 @@ enum EDisplayPage
   eRXPage,                                  // "normal" RX page display
   eTXPage,                                  // "normal" TX page display
   eTrippedPage,                             // page when h/w tripped
-  eAboutPage                                // about page
+  eAboutPage,                               // about page
+  eEngineeringPage                          // engineering (PIN) page
 };
 
 

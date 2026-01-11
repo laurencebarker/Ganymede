@@ -16,6 +16,9 @@
 #include <stdlib.h>
 
 
+long Gp2appVersion;                     // radio s/w version for Saturn
+long GFirmwareVersion;                  // radio firmware version
+
 //
 // clip to numerical limits allowed for a given message type
 //
@@ -95,13 +98,31 @@ HandleAmplifierTripMessage(int Param)
 }
 
 
+//
+// handle incoming encoded s/w version messages
+// used to display firmware and p2app versions
+// ZZZSppnnmmm
+// ZZZS07nnmmm:   Saturn f/w  nn = firmware major version mmm = firmware minor version
+// ZZZS06nnmmm:   P2APP  nnmmm = P2APP version
 
+HandleIncomingSWVersion(long Param)
+{
+  long ProductID;
+  long Version;
+
+  ProductID = (Param / 100000);
+  Version = (Param % 100000);
+  if(ProductID == 6)
+    Gp2appVersion = Version;
+  else if(ProductID == 7)
+    GFirmwareVersion = Version;
+}
 
 
 //
 // handle CAT commands with numerical parameters
 //
-void HandleCATCommandNumParam(ECATCommands MatchedCAT, int ParsedParam)
+void HandleCATCommandNumParam(ECATCommands MatchedCAT, long ParsedParam)
 {
   int Device;
   byte Param;
@@ -111,6 +132,9 @@ void HandleCATCommandNumParam(ECATCommands MatchedCAT, int ParsedParam)
   {
     case eZZZA:                                                       // amplifier trip reset
       HandleAmplifierTripMessage(ParsedParam);
+      break;
+    case eZZZS:
+      HandleIncomingSWVersion(ParsedParam);
       break;
   }
 }

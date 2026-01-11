@@ -16,7 +16,7 @@
 
 //
 // firstly an enumerated list of all of the CAT commands
-// ordered as per documentation, not alphsabetically!
+// ordered as per documentation, not alphabetically!
 enum ECATCommands
 {
   eZZZA,                          // amplifier trip

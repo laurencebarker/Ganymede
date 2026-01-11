@@ -16,6 +16,8 @@
 #include "globalinclude.h"
 #include "analogueio.h"
 #include "protect.h"
+#include "configdata.h"
+#include "cathandler.h"
 
 
 
@@ -39,7 +41,6 @@ byte GDisplayData;                            // sets which object to update nex
 byte GSecondaryDisplayData;                   // sets which object to update next
 int GDisplayedPower;                          // used as part of update only if power moves by >10W
 bool GWritePowerDisplay1stTime;               // true when first entering TX
-unsigned int GReversePeakPower;               // reverse peak power value
 //
 // declare pages:
 //
@@ -48,23 +49,25 @@ NexPage page1 = NexPage(1, 0, "page1");       // creates touch event for "RX" pa
 NexPage page2 = NexPage(2, 0, "page2");       // creates touch event for "TX" page
 NexPage page3 = NexPage(3, 0, "page3");       // creates touch event for "tripped" page
 NexPage page4 = NexPage(4, 0, "page4");       // creates touch event for "about" page
+NexPage page5 = NexPage(5, 0, "page5");       // creates touch event for "engineering" page
 
 //
 // page 1 objects:
 // 
 NexText p1OnTime = NexText(1, 5, "p1t5");                   // on time
 NexText p1HsTemp = NexText(1, 8, "p1t8");                   // heatsink temp
+NexText p1Voltage = NexText(1, 10, "p1t10");                // PSU voltage
+NexText p1Protect = NexText(1, 20, "p1t20");                // protection state
 
 //
 // page 2 objects:
 // 
-NexText p2HsTemp = NexText(2, 16, "p2t16");                 // heatsink temp
-NexText p2Voltage = NexText(2, 17, "p2t17");                // PSU voltage
-NexText p2Current = NexText(2, 18, "p2t18");                // drain current
-//NexText p2FwdPower = NexText(2, 19, "p2t19");               // forward power
-//NexText p2RevPower = NexText(2, 20, "p2t20");               // reverse power
-NexProgressBar p2FwdProgress = NexProgressBar(2, 24, "p2j0");            // forward power bar
-NexProgressBar p2RevProgress = NexProgressBar(2, 23, "p2j1");            // forward power bar
+NexText p2HsTemp = NexText(2, 11, "p2t16");                 // heatsink temp
+NexText p2Voltage = NexText(2, 12, "p2t17");                // PSU voltage
+NexText p2Current = NexText(2, 13, "p2t18");                // drain current
+NexProgressBar p2FwdProgress = NexProgressBar(2, 20, "p2j0");            // forward power bar
+NexProgressBar p2RevProgress = NexProgressBar(2, 21, "p2j1");            // forward power bar
+NexText p2Protect = NexText(2, 22, "p2t20");                // protection state
 
 //
 // page 3 objects:
@@ -85,6 +88,17 @@ NexButton p3Reset = NexButton(3, 2, "p3b2");                // RESET pushbutton
 // page 4 objects:
 // 
 NexText p4SWVersion = NexText(4, 4, "p4t4");                // s/w version
+NexText p4FWVersion = NexText(4, 6, "p4t6");                // FPGA f/w version
+NexText p4p2appVersion = NexText(4, 8, "p4t8");             // p2app s/w version
+NexButton p3Engineering = NexButton(4, 1, "p4b0");          // Engineering pushbutton
+
+//
+// page 5 objects:
+// 
+NexNumber p5PIN = NexNumber(5, 1, "p5n0");                  // PIN value
+NexButton p5Protect = NexButton(5, 6, "p5bt0");             // Protection pushbutton
+
+
 
 //
 // declare touch event objects to the touch event list
@@ -97,7 +111,9 @@ NexTouch *nex_listen_list[] =
   &page2,                                     // page change 
   &page3,                                     // page change
   &page4,                                     // page change 
+  &page5,                                     // page change 
   &p3Reset,                                   // RESET button press
+  &p5Protect,                                 // PROTECT button press
   NULL                                        // terminates the list
 };
 
@@ -186,6 +202,9 @@ void page0PushCallback(void *ptr)             // called when page 0 loads (splas
 void page1PushCallback(void *ptr)             // called when page 1 loads (RX page)
 {
   GDisplayPage = eRXPage;
+  if(GProtectionEnforced)
+    p1Protect.setText("Protected");
+
 }
 
 //
@@ -194,6 +213,8 @@ void page1PushCallback(void *ptr)             // called when page 1 loads (RX pa
 void page2PushCallback(void *ptr)             // called when page 2 loads (TX page)
 {
   GDisplayPage = eTXPage;
+  if(GProtectionEnforced)
+    p2Protect.setText("Protected");
 }
 
 //
@@ -203,6 +224,7 @@ void page2PushCallback(void *ptr)             // called when page 2 loads (TX pa
 void page3PushCallback(void *ptr)             // called when page 3 loads (tripped page)
 {
   GDisplayPage = eTrippedPage;
+
   if(GTripCause == eTripCurrent)
   {
     sendCommand("p3t5.bco=RED");
@@ -239,6 +261,32 @@ void page4PushCallback(void *ptr)             // called when page 4 loads (about
   GDisplayPage = eAboutPage;
   mysprintf(Str, SWVERSION, false);
   p4SWVersion.setText(Str);
+
+  if(Gp2appVersion != 0)
+  {
+    mysprintf(Str, Gp2appVersion, false);
+    p4p2appVersion.setText(Str);
+  }
+
+  if(GFirmwareVersion != 0)
+  {
+    mysprintf(Str, GFirmwareVersion, false);
+    p4FWVersion.setText(Str);
+  }
+
+}
+
+
+
+//
+// page 5 - engineering page callback
+//
+void page5PushCallback(void *ptr)             // called when page 5 loads (engineering page)
+{
+  char Str[10];
+  GDisplayPage = eEngineeringPage;
+  if(GProtectionEnforced)
+    p5Protect.setText("Active");
 }
 
 
@@ -251,6 +299,46 @@ void p3ResetPushCallback(void *ptr)              // reset trips pushbutton
 }
 
 
+//
+// touch event - PROTECT pushbutton on page 5
+// this is used to change the protection state, and needs to check the stored and entered PIM
+//
+void p5ProtectPushCallback(void *ptr)              // reset trips pushbutton
+{
+  uint32_t EnteredPIN;
+  bool Result;
+
+  Result = p5PIN.getValue(&EnteredPIN);
+  if(EnteredPIN != 0)                               // no action if entered PIN is zero
+  {
+    if(GPin == 0)                                   // if no protection PIN is stored
+    {
+      GPin = EnteredPIN;                            // store new PIN to EEPROM
+      CopySettingsToEEprom();
+      EnforceProtection(true);                      // enable protection
+      p5Protect.setText("Active");
+    }
+    else
+    {
+      if (GPin == EnteredPIN)                       // if equal, toggle protection state
+      {
+        if(GProtectionEnforced)
+        {
+          GPin = 0;                                 // set PIN back to zero if unprotected
+          CopySettingsToEEprom();
+          EnforceProtection(false);
+          p5Protect.setText("Inactive");
+        }
+        else
+        {
+          EnforceProtection(true);
+          p5Protect.setText("Active");
+        }
+      }
+    }
+
+  }
+}
 
 //
 // display initialise
@@ -277,7 +365,9 @@ void DisplayInit(void)
   page2.attachPush(page2PushCallback);
   page3.attachPush(page3PushCallback);
   page4.attachPush(page4PushCallback);
+  page5.attachPush(page5PushCallback);
   p3Reset.attachPush(p3ResetPushCallback);
+  p5Protect.attachPush(p5ProtectPushCallback);
 }
 
 
@@ -288,7 +378,9 @@ void DisplayInit(void)
 void DisplayTick(void)
 {
   char Str[20];
-  int CurrentForwardPower;
+  float CurrentPower;
+  int PercentForwardPower;
+  int PercentReversePower;
 //
 // handle touch display events
 //  
@@ -306,9 +398,24 @@ void DisplayTick(void)
     case eRXPage:                                   // "normal" RX page display
       if(GDisplayThrottleTicks == 0)                // update display if timed out
       {
-        mysprintf(Str, GetTemperature()/10, false);   // temp in C
-        p1HsTemp.setText(Str);
-        GDisplayThrottleTicks = VHALFSECOND;
+        switch(GDisplayData)
+        {
+          case 0:                                         // display temp
+            mysprintf(Str, GetTemperature()/10, false);   // temp in C
+            p1HsTemp.setText(Str);
+            break;
+
+          case 1:                                         // display PSU voltage
+            mysprintf(Str, GetPSUVoltage()/10, false);    // voltage in whole volts
+            p1Voltage.setText(Str);
+            break;
+        }
+        GDisplayThrottleTicks = VTENTHSECOND;
+        if (GDisplayData == 1)                      // and set up to display next object
+          GDisplayData=0;
+        else
+          GDisplayData++;
+
       }
       else
         GDisplayThrottleTicks--;
@@ -323,12 +430,16 @@ void DisplayTick(void)
         switch(GDisplayData)
         {
           case 0:                                         // display forward power
-            CurrentForwardPower = GetForwardPeakPower(true);
-            GReversePeakPower = GetReversePeakPower(true);
-            p2FwdProgress.setValue(CurrentForwardPower/6);
+            CurrentPower = (float)GetForwardPeakPower(true);
+            PercentForwardPower = (int) (CurrentPower * 100.0/1800.0);
+            PercentForwardPower = min(PercentForwardPower, 100);
+            p2FwdProgress.setValue(PercentForwardPower);
             break;
           case 1:                                         // display reverse power
-            p2RevProgress.setValue((GReversePeakPower*5)/6);
+            CurrentPower = (float)GetReversePeakPower(true);
+            PercentReversePower = (int) (CurrentPower * 100.0/450.0);
+            PercentReversePower = min(PercentReversePower, 100);
+            p2RevProgress.setValue(PercentReversePower);
             break;
           case 2:                                         // display something else
 
@@ -347,7 +458,7 @@ void DisplayTick(void)
                 p2Current.setText(Str);
                 break;
             }
-            if (GSecondaryDisplayData == 2)                      // and set up to display next object
+            if (GSecondaryDisplayData == 2)                   // and set up to display next object
               GSecondaryDisplayData=0;
             else
               GSecondaryDisplayData++;

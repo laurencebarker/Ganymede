@@ -85,5 +85,11 @@ void ClearPeakHolds(void);
 void SetZeroCurrent(void);
 
 
+//
+// set PWM comparamtor thresholds
+// if paramter is true, set to max allowed (5V)
+//
+void SetPWMThresholds(bool SetToMax);
+
 
 #endif      // file sentry

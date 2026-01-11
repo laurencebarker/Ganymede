@@ -239,7 +239,7 @@ void ParseCATCmd(void)
           if (isNumeric(ch))
           {
             ParsedType = eNum;
-            ParsedInt = atoi(ParsedString);
+            ParsedInt = atol(ParsedString);
 // finally see if we need a bool
             if (StructPtr->RXType == eBool)
             {

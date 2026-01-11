@@ -16,27 +16,34 @@
 #include "protect.h"
 
 
-#define VPOWERSCALE 0.000620F               // convert ADC reading squared to forward, reverse power
-#define VCURRENTSCALE 0.07373F              // convert ADC reading to current (includes potential divider)
-#define VVOLTAGESCALE 0.1025F               // convert ADC reading to PSU voltage
+//
+// scaling factors to convert from ADC reading to sensed value
+// note these are for true ISO units, not scaled by a factor of 10 for 1 decimapl place
+// see spreadsheet for derivation
+//
+#define VFWDPOWERSCALE 0.002968131F         // convert ADC reading squared to forward watts
+#define VREVPOWERSCALE 0.000745561F         // convert ADC reading squared to reverse watts
+#define VCURRENTSCALE 0.069225749F          // convert ADC reading to current (includes potential divider)
+#define VVOLTAGESCALE 0.076311849F          // convert ADC reading to PSU voltage
 
 //
 // comparator threshold outputs. See spreadsheet for derivation.
 //
-#define VCURRENTPWMTHRESHOLD  125           // 32A true current  
-#define VVOLTAGEPWMTHRESHOLD  134           // 2.61V
-#define VREVPOWERPWMTHRESHOLD 105           // 1.96V
+#define VCURRENTPWMTHRESHOLD  163           // 45A true current  
+#define VVOLTAGEPWMTHRESHOLD  174           // 3.391V
+#define VREVPOWERPWMTHRESHOLD 177           // 3.46V
 
 
 //
 // global variables
 // sensor values, as 1DP fixed point integers
+// (ie voltage 480 means 48.0 volts)
 //
 unsigned int GSensorTemperature;
-unsigned int GSensorPSUVolts;
-unsigned int GSensorCurrent;
-unsigned int GSensorFwdPower;
-unsigned int GSensorRevPower;
+unsigned int GSensorPSUVolts;             // 1DP
+unsigned int GSensorCurrent;              // 1DP
+unsigned int GSensorFwdPower;             // watts (not 1DP)
+unsigned int GSensorRevPower;             // watts (not 1DP)
 unsigned int GSensorFwdPowerPeak;
 unsigned int GSensorRevPowerPeak;
 int GSensorZeroCurrentRaw;               // ADC reading
@@ -112,6 +119,26 @@ int FindTemp(int SensorReading)
 }
 
 
+//
+// set PWM comparamtor thresholds
+// if paramter is true, set to max allowed (5V)
+//
+void SetPWMThresholds(bool SetToMax)
+{
+  if(SetToMax)
+  {
+    analogWrite(VPINCURRENTPWM, 255);
+    analogWrite(VPINVOLTAGEPWM, 255);
+    analogWrite(VPINREVPOWERPWM, 255);
+  }
+  else
+  {
+    analogWrite(VPINCURRENTPWM, VCURRENTPWMTHRESHOLD);
+    analogWrite(VPINVOLTAGEPWM, VVOLTAGEPWMTHRESHOLD);
+    analogWrite(VPINREVPOWERPWM, VREVPOWERPWMTHRESHOLD);
+  }
+}
+
 
 //
 // AnalogueIO initialise
@@ -119,9 +146,7 @@ int FindTemp(int SensorReading)
 //
 void AnalogueIOInit(void)
 {
-  analogWrite(VPINCURRENTPWM, VCURRENTPWMTHRESHOLD);
-  analogWrite(VPINVOLTAGEPWM, VVOLTAGEPWMTHRESHOLD);
-  analogWrite(VPINREVPOWERPWM, VREVPOWERPWMTHRESHOLD);
+  SetPWMThresholds(false);
 }
 
 
@@ -155,14 +180,14 @@ void AnalogueIOTick(void)
 
   SensorReading = analogRead(VPINFWDPOWERADC);                      // get ADC reading for forward RF voltage
   ScaledReading = (float)SensorReading;                             // ADC
-  ScaledReading = ScaledReading * ScaledReading * VPOWERSCALE;      // V2/R for power
+  ScaledReading = ScaledReading * ScaledReading * VFWDPOWERSCALE;   // V2/R for power
   GSensorFwdPower = (unsigned int)ScaledReading;                    // store forward power to variable (not fixed point!)
   if(GSensorFwdPower > GSensorFwdPowerPeak)                         // peak hold the value
     GSensorFwdPowerPeak = GSensorFwdPower;
     
   SensorReading = analogRead(VPINREVPOWERADC);                      // get ADC reading for reverse RF voltage
   ScaledReading = (float)SensorReading;                             // ADC
-  ScaledReading = ScaledReading * ScaledReading * VPOWERSCALE;      // V2/R for power
+  ScaledReading = ScaledReading * ScaledReading * VREVPOWERSCALE;   // V2/R for power
   GSensorRevPower = (unsigned int)ScaledReading;                    // store reverse power to variable (not fixed point!)
   if(GSensorRevPower > GSensorRevPowerPeak)
     GSensorRevPowerPeak = GSensorRevPower;

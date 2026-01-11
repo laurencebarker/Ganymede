@@ -16,6 +16,7 @@
 #include "iopins.h"
 #include "cathandler.h"
 #include "analogueio.h"
+#include "configdata.h"
 
 
 //
@@ -45,12 +46,13 @@ bool GTempResettable;                   // if true can't reset until temp lowere
 bool GPowerResettable;                  // if true can't reset until forward power lowered
 bool GResettable;                       // true if radio will allow a RESET button press
 bool GResetActivated;                   // true if reset button has been activated
+bool GProtectionEnforced;               // true if protection is enforced
 
 #define VTRIPTEMPTHRESHOLD 900          // 90C to trip
 #define VTTRIPTEMPREENABLE 500          // re-enable at 50C
 #define VFANONTHRESHOLD 400             // fan on at 40C
 #define VFANOFFTHRESHOLD 300            // off at 30C
-#define VTRIPFWDPOWERTHRESHOLD 600      // forward power trip, in watts
+#define VTRIPFWDPOWERTHRESHOLD 1500     // forward power trip, in watts
 #define VTTRIPPOWERREENABLE 40          // forward power re-enable level, in watts (should be 0 if tripped anyway)
 
 
@@ -58,26 +60,35 @@ bool GResetActivated;                   // true if reset button has been activat
 void CurrentComparatorHandler(void)
 {
   GTripCause = eTripCurrent;
+  if(GProtectionEnforced)
+  {
 // deassert enable outputs
-  digitalWrite(VPINAMPENABLE, LOW);
-  digitalWrite(VPINPSUENABLE, LOW);
+    digitalWrite(VPINAMPENABLE, LOW);
+    digitalWrite(VPINPSUENABLE, LOW);
+  }
 }
 
 
 void VoltageComparatorHandler(void)
 {
   GTripCause = eTripPSUVoltage;
+  if(GProtectionEnforced)
+  {
 // deassert enable outputs
-  digitalWrite(VPINAMPENABLE, LOW);
-  digitalWrite(VPINPSUENABLE, LOW);
+    digitalWrite(VPINAMPENABLE, LOW);
+    digitalWrite(VPINPSUENABLE, LOW);
+  }
 }
 
 void SRFlipFlopTripHandler(void)
 {
   GTripCause = eTripRevPower;
+  if(GProtectionEnforced)
+  {
 // deassert enable outputs
-  digitalWrite(VPINAMPENABLE, LOW);
-  digitalWrite(VPINPSUENABLE, LOW);
+    digitalWrite(VPINAMPENABLE, LOW);
+    digitalWrite(VPINPSUENABLE, LOW);
+  }
 }
 
 
@@ -91,6 +102,16 @@ void ProtectInit(void)
   GProtectionState = eNotInitialised;
   GInitialiseCounter = VINITCOUNT;
   GTripCause = eNoTrip;
+
+//
+// turn on enforcement of protection if the PIN has been set
+//
+  if (GPin != 0)
+    EnforceProtection(true);
+  else
+    EnforceProtection(false);
+
+
   delay(500);                                 // 0.5s delay to give time for comparator thresholds to settle
 //
 // cycle the SR flip flop reset (it could start up in either state)
@@ -116,11 +137,12 @@ void ProtectInit(void)
 //
 // if there is a trip cause, just wait for now: the cause is set and will enter tripped in the sequencer
 //
-  if(GTripCause == eNoTrip)                   // OK to power up
+  if((GTripCause == eNoTrip) || (GProtectionEnforced == false))                   // OK to power up
   {
     digitalWrite(VPINPSUENABLE, HIGH);        // turn on PSU
   }
 }
+
 
 
 //
@@ -173,9 +195,12 @@ void CheckTemperature(int Temperature)
   {
     if (GTripCause == eNoTrip)
       GTripCause = eTripTemperature;
-// deassert enable outputs
+    if(GProtectionEnforced)
+    {
+  // deassert enable outputs
       digitalWrite(VPINAMPENABLE, LOW);
       digitalWrite(VPINPSUENABLE, LOW);
+    }
       GTempResettable = false;        // can't reset for temp
   }
   else if (Temperature < VTTRIPTEMPREENABLE)
@@ -199,15 +224,16 @@ void CheckTemperature(int Temperature)
 // 
 void ProtectTick(void)
 {
-  bool PTTPressed = false;                      // true if PTT pressed
+  bool PTTPressed = false;                        // true if PTT pressed
 
 
-  if (digitalRead(VPINPTT)==HIGH)               // first read the PTT
+  if (digitalRead(VPINPTT)==HIGH)                 // first read the PTT
     PTTPressed = true;
+
 //
-// first see if it has been tripped (eg excessive temperature) - 
+// see if it has been tripped (eg excessive temperature) - 
 // 
-  if ((GTripCause != eNoTrip) && (GProtectionState != eTripped))
+  if ((GTripCause != eNoTrip) && (GProtectionState != eTripped) && (GProtectionEnforced == true))
   {
     GProtectionState = eTripped;                  // set new state
     MakeAmplifierTripMessage(GTripCause);         // send CAT message
@@ -238,6 +264,8 @@ void ProtectTick(void)
         ClearPeakHolds();
         SetDisplayPage(eTXPage);
       }
+      else
+        SetZeroCurrent();                         // no PA current when in RX
       break;
       
     case eTX:                                     // "normal" TX. Check if TX ended
@@ -288,3 +316,23 @@ void ProtectTick(void)
       break;
   }
 }
+
+
+
+//
+// enable/disable protection enforcement
+// clear any existing trips when setting
+// set analogue threshold correectly, then reset SR flip flop
+//
+void EnforceProtection(bool IsEnforced)
+{
+  GTripCause = eNoTrip;
+  GProtectionEnforced = IsEnforced;
+
+  if(IsEnforced)
+    SetPWMThresholds(false);
+  else
+    SetPWMThresholds(true);
+  DisplayResetPressed();
+}
+

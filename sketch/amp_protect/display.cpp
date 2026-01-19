@@ -567,9 +567,14 @@ void SetDisplayPage(EDisplayPage NewPage)
 }
 
 //
-// set reset button text whwn ready to reset
+// set reset button text when ready to reset
 //
-void ActivateResetButton(void)
+void ActivateResetButton(bool AllowReset)
 {
-  p3Reset.setText("RESET");
+  if(AllowReset)
+    p3Reset.setText("RESET");
+  else
+    p3Reset.setText("-----");
 }
+
+

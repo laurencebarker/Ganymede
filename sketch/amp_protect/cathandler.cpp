@@ -59,26 +59,31 @@ void MakeSoftwareVersionMessage(void)
 // function to send back a product ID message
 // Data holds the trip condition
 // 0: no trip; 1: reverse power trip; 2: drain current trip; 4: PSU voltsge trip; 8: heatsink temperature trip
+// 16: high forward power trip
+// 64: can be reset
 //
-void MakeAmplifierTripMessage(ETripCause Data)
+void MakeAmplifierTripMessage(ETripCause Data, bool CanReset)
 {
   byte Value;
 
-  switch(Data)
-  {
-    case eNoTrip:                              // not tripped
-      Value = 0; break;
-    case eTripCurrent:                         // excess current
-      Value = 2; break;
-    case eTripPSUVoltage:                      // input PSU over threshold
-      Value = 4; break;
-    case eTripTemperature:                     // temp outside limits
-      Value = 8; break;
-    case eTripFwdPower:                        // excessive forward power
-      Value = 16; break;
-    case eTripRevPower:                        // excessive reverse power
-      Value = 1; break;
-  }
+  if(CanReset)
+    Value = 64;
+  else 
+    switch(Data)
+    {
+      case eNoTrip:                              // not tripped
+        Value = 0; break;
+      case eTripCurrent:                         // excess current
+        Value = 2; break;
+      case eTripPSUVoltage:                      // input PSU over threshold
+        Value = 4; break;
+      case eTripTemperature:                     // temp outside limits
+        Value = 8; break;
+      case eTripFwdPower:                        // excessive forward power
+        Value = 16; break;
+      case eTripRevPower:                        // excessive reverse power
+        Value = 1; break;
+    }
   
   MakeCATMessageNumeric(eZZZA,Value);
 }
@@ -111,7 +116,7 @@ HandleIncomingSWVersion(long Param)
   long Version;
 
   ProductID = (Param / 100000);
-  Version = (Param % 100000);
+  Version = (Param % 1000);
   if(ProductID == 6)
     Gp2appVersion = Version;
   else if(ProductID == 7)
@@ -151,8 +156,7 @@ void HandleCATCommandNoParam(ECATCommands MatchedCAT)
       MakeSoftwareVersionMessage();
       break;
     case eZZZA:                                                       // amplifier trip request
-      MakeAmplifierTripMessage(GTripCause);
-    
+      MakeAmplifierTripMessage(GTripCause, GResetActivated);    
   }
 }
 

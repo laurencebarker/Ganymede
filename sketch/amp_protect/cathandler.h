@@ -30,8 +30,10 @@ extern long GFirmwareVersion;                  // radio firmware version
 // function to send back a product ID message
 // Data holds the trip condition
 // 0: no trip; 1: reverse power trip; 2: drain current trip; 4: PSU voltsge trip; 8: heatsink temperature trip
+// 16: high forward power trip
+// 64: can be reset
 //
-void MakeAmplifierTripMessage(ETripCause Data);
+void MakeAmplifierTripMessage(ETripCause Data, bool CanReset);
 
 
 

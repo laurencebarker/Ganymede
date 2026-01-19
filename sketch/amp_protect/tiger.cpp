@@ -58,7 +58,7 @@ long DivisorTable[] =
 #define VNUMCATCMDS 2
 SCATCommands GCATCommands[VNUMCATCMDS] = 
 {
-  {"ZZZA", eNum, 0, 32, 2, false},                        // amplifier trip report
+  {"ZZZA", eNum, 0, 64, 2, false},                        // amplifier trip report
   {"ZZZS", eNum, 0, 9999999, 7, false}                    // s/w version
 };
 

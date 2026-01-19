@@ -32,6 +32,7 @@ enum ETripCause
 
 extern ETripCause GTripCause;                  // reason for trip
 extern bool GProtectionEnforced;               // true if protection is enforced
+extern bool GResetActivated;                   // true if reset button has been activated
 
 
 

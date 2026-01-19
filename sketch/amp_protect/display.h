@@ -57,9 +57,9 @@ void DisplaySetOnTime(char* Str);
 void SetDisplayPage(EDisplayPage NewPage);
 
 //
-// set reset button text whwn ready to reset
+// set reset button text when ready to reset
 //
-void ActivateResetButton(void);
+void ActivateResetButton(bool AllowReset);
 
 
 #endif //#ifndef

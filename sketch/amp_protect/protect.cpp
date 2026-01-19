@@ -236,7 +236,7 @@ void ProtectTick(void)
   if ((GTripCause != eNoTrip) && (GProtectionState != eTripped) && (GProtectionEnforced == true))
   {
     GProtectionState = eTripped;                  // set new state
-    MakeAmplifierTripMessage(GTripCause);         // send CAT message
+    MakeAmplifierTripMessage(GTripCause, false);         // send CAT message
     SetDisplayPage(eTrippedPage);
     GResetActivated = false;                      // reset button not activated
   }
@@ -304,13 +304,20 @@ void ProtectTick(void)
       if ((GResettable == true) && (GResetActivated == false))
       {
         GResetActivated = true; 
-        ActivateResetButton();                        // change text on reset button when ready
+        ActivateResetButton(true);                        // change text on reset button when ready
+        MakeAmplifierTripMessage(GTripCause, true);         // send CAT message
+      }
+      else if((GResettable == false) && (GResetActivated == true))
+      {
+        GResetActivated = false; 
+        ActivateResetButton(false);                        // change text on reset button when ready
+        MakeAmplifierTripMessage(GTripCause, false);         // send CAT message
       }
       break;
 
     case eTripResetPressed:                       // complete the restoration of normal operation
       GProtectionState = eRX;
-      MakeAmplifierTripMessage(GTripCause);         // send CAT message
+      MakeAmplifierTripMessage(GTripCause, false);         // send CAT message
       digitalWrite(VPINAMPENABLE, HIGH);          // turn amplifier back on
       SetDisplayPage(eRXPage);
       break;

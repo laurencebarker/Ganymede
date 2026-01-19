@@ -27,7 +27,7 @@
 
 
 
-#define SWVERSION 5
+#define SWVERSION 6
 #define HWVERSION 1
 #define PRODUCTID 3                 // Ganymede
 

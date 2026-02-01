@@ -155,6 +155,7 @@ void DisplayResetPressed(void)
     SetZeroCurrent();                           // re-read zero while drain supply still off
     GTripCause = eNoTrip;
     GProtectionState = eTripResetPressed;
+    GResetActivated = false;
     digitalWrite(VPINPSUENABLE, HIGH);          // turn PSU back on
   }
 }
